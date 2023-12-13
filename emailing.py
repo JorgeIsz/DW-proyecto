@@ -2,8 +2,9 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-from charts import create_line_chart
 from decouple import config
+
+from charts import create_line_chart
 
 
 sender = config('SENDER_EMAIL')
@@ -35,7 +36,7 @@ variables_text = {
 }
 
 
-def create_email_body(bad_weather_forecast):
+def create_email_body(bad_weather_forecast, city_name):
     variables = list(bad_weather_forecast.keys())
     variables_description = ""
     variables_charts = ""
@@ -55,7 +56,7 @@ def create_email_body(bad_weather_forecast):
   		
 		<bold>Hello.</bold>
 		
-		<p>You're receiving this email because the forecast suggests bad weather in your area.
+		<p>You're receiving this email because the forecast suggests bad weather in {city_name}.
 		More specifically: {variables_description}.</p>
 		
 		<p>Here's the full report:</p>
@@ -66,13 +67,15 @@ def create_email_body(bad_weather_forecast):
     return body
 
 
-def send_email(recipient, bad_weather_forecast):
+def send_email(recipient, bad_weather_forecast, city):
+    city_name = city[1]
+
     email = MIMEMultipart()
     email['From'] = f'Data Warehouse group project <{sender}>'
     email['To'] = recipient
-    email['Subject'] = 'Bad Weather Report'
+    email['Subject'] = f'Bad Weather Report for the city of {city_name}'
 
-    body = create_email_body(bad_weather_forecast)
+    body = create_email_body(bad_weather_forecast, city_name)
     email.attach(MIMEText(body, 'html'))
 
     # Create a line chart for each bad weather variable's forecast

@@ -4,7 +4,8 @@ import pandas as pd
 import openmeteo_requests
 from decouple import config
 
-from send_email import send_email
+from emailing import send_email
+from store_db import insert_forecast_data, get_subscriber_list, get_city_list
 
 cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
 retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
@@ -25,17 +26,16 @@ weather_variables = {
 	"precipitation": Range(None, 8),
 	"snowfall": Range(None, 8),
 	"wind_speed_10m": Range(None, 50),
-	#	"weather_code": ,
 }
 
 weather_variables_list = list(weather_variables.keys())
 url = "https://api.open-meteo.com/v1/forecast"
-def request_weather_data():
+def request_weather_data(latitude, longitude):
 
 	# TODO: change this vancouver coordinates to parameters
 	params = {
-		"latitude": 49.2497,
-		"longitude": -123.1193,
+		"latitude": latitude,
+		"longitude": longitude,
 		"hourly": weather_variables_list,
 		"forecast_days": 1
 	}
@@ -78,11 +78,23 @@ def check_for_bad_weather(data):
 
 
 if __name__ == "__main__":
-	# Get 24-hour weather data from open-meteo API
-	weather_data = request_weather_data()
+	subscribers = get_subscriber_list()
 
-	# Look for variables that indicate bad weather
-	bad_weather_forecast = check_for_bad_weather(weather_data)
+	cities = get_city_list()
 
-	# Send email with the bad weather information
-	send_email(config('EMAIL_RECIPIENT'), bad_weather_forecast)
+	for subscriber in subscribers:
+		city = list(filter(lambda x: x[0] == subscriber[1], cities))[0]
+		email = subscriber[0]
+		latitude = city[2]
+		longitude = city[3]
+
+		# Get 24-hour weather data from open-meteo API
+		weather_data = request_weather_data(latitude, longitude)
+
+		# Look for variables that indicate bad weather
+		bad_weather_forecast = check_for_bad_weather(weather_data)
+
+		insert_forecast_data(weather_data)
+
+		# Send email with the bad weather information
+		send_email(email, bad_weather_forecast, city)
