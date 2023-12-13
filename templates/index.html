@@ -1,0 +1,23 @@
+<html>
+<head>
+    <title>Bad Weather in DB email list</title>
+</head>
+<body>
+    <h1>Bad Weather in DB email list</h1>
+
+    <form method="post" action="/subscribe" enctype="multipart/form-data">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email">
+
+        <select id="city_id" name="city_id">
+            <option value="2" id="2">Vancouver</option>
+            <option value="1" id="1">Surrey</option>
+            <option value="3" id="3">Richmond</option>
+            <option value="4" id="4">Delta</option>
+            <option value="5" id="5">Burnaby</option>
+        </select>
+
+        <input type="submit" value="Subscribe">
+    </form>
+</body>
+</html>

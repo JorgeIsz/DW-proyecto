@@ -47,6 +47,9 @@ def get_subscriber_list():
     cursor.execute("select email, city_id from subscriber;")
     lista = cursor.fetchall()
 
+    cursor.close()
+    conn.close()
+
     return lista
 
 def get_city_list():
@@ -58,3 +61,13 @@ def get_city_list():
 
     return lista
 
+def register_subscriber(email, city_id):
+    print("register")
+    conn = create_connection()
+
+    cursor = conn.cursor()
+    cursor.execute(f"insert into subscriber (email, city_id) values ('{email}', {city_id});")
+    conn.commit()
+
+    cursor.close()
+    conn.close()
