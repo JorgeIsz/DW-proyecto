@@ -94,6 +94,11 @@ def read_root(request: Request, sub: Union[int, None] = None):
     return templates.TemplateResponse("index.html", {"request": request, "sub": sub})
 
 
+@app.get("/refresh")
+def refresh(request: Request):
+    send_full_list()
+    return {"success": True}
+
 @app.post("/subscribe/")
 async def post_create_subscriber(request: Request):
     form = await request.form()
@@ -125,7 +130,7 @@ def send_bad_weather_forecast_to_email(email, city):
     send_email(email, bad_weather_forecast, city)
 
 
-if __name__ == "__main__":
+def send_full_list():
     subscribers = get_subscriber_list()
 
     cities = get_city_list()
@@ -135,3 +140,7 @@ if __name__ == "__main__":
         email = subscriber[0]
 
         send_bad_weather_forecast_to_email(email, city)
+
+
+if __name__ == "__main__":
+    send_full_list()
