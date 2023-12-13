@@ -1,3 +1,4 @@
+from typing import Union
 from retry_requests import retry
 import requests_cache
 import pandas as pd
@@ -89,8 +90,8 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/")
-def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+def read_root(request: Request, sub: Union[int, None] = None):
+    return templates.TemplateResponse("index.html", {"request": request, "sub": sub})
 
 
 @app.post("/subscribe/")
@@ -105,7 +106,7 @@ async def post_create_subscriber(request: Request):
     city = list(filter(lambda x: x[0] == city_id, cities))[0]
 
     send_bad_weather_forecast_to_email(email, city)
-    return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url="/?sub=1", status_code=303)
 
 
 def send_bad_weather_forecast_to_email(email, city):
