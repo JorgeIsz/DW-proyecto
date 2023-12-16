@@ -1,7 +1,9 @@
 import psycopg2
 
-def _get_forecast_insert_sql(data):
-    full = "INSERT INTO forecast_weather_data VALUES "
+def _get_forecast_insert_sql(data, city_id):
+    full = """INSERT INTO forecast_weather_data
+     (datetime, temperature_2m, precipitation_probability, precipitation, snowfall, wind_speed_10m, city_id)
+    VALUES """
 
     for hour in range(24):
         datetime = data['datetime'][hour]
@@ -10,7 +12,7 @@ def _get_forecast_insert_sql(data):
         precipitation = data['precipitation'][hour]
         snowfall = data['snowfall'][hour]
         wind_speed_10m = data['wind_speed_10m'][hour]
-        values = f"('{datetime}', {temperature_2m}, {precipitation_probability}, {precipitation}, {snowfall}, {wind_speed_10m})"
+        values = f"('{datetime}', {temperature_2m}, {precipitation_probability}, {precipitation}, {snowfall}, {wind_speed_10m}, {city_id})"
 
         full += values
         if hour != 23:
@@ -28,10 +30,10 @@ def create_connection():
         port="5432"
     )
 
-def insert_forecast_data(data):
+def insert_forecast_data(data, city_id):
     conn = create_connection()
 
-    sql = _get_forecast_insert_sql(data)
+    sql = _get_forecast_insert_sql(data, city_id)
     cursor = conn.cursor()
     cursor.execute(sql)
     conn.commit()

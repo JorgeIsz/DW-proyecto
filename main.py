@@ -3,6 +3,10 @@ from retry_requests import retry
 import requests_cache
 import pandas as pd
 import openmeteo_requests
+import schedule
+import uvicorn
+import time
+import threading
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -27,6 +31,7 @@ class Range:
 
 weather_variables = {
     "temperature_2m": Range(8, 30),
+    "apparent_temperature": Range(8, 32),
     "precipitation_probability": Range(None, 70),
     "precipitation": Range(None, 8),
     "snowfall": Range(None, 8),
@@ -47,10 +52,6 @@ def request_weather_data(latitude, longitude):
     responses = openmeteo.weather_api(url, params=params)
 
     response = responses[0]
-    print(f"Coordinates {response.Latitude()}°E {response.Longitude()}°N")
-    print(f"Elevation {response.Elevation()} m asl")
-    print(f"Timezone {response.Timezone()} {response.TimezoneAbbreviation()}")
-    print(f"Timezone difference to GMT+0 {response.UtcOffsetSeconds()} s")
 
     hourly = response.Hourly()
     hourly_data = {"datetime": pd.date_range(
@@ -94,11 +95,6 @@ def read_root(request: Request, sub: Union[int, None] = None):
     return templates.TemplateResponse("index.html", {"request": request, "sub": sub})
 
 
-@app.get("/refresh")
-def refresh(request: Request):
-    send_full_list()
-    return {"success": True}
-
 @app.post("/subscribe/")
 async def post_create_subscriber(request: Request):
     form = await request.form()
@@ -124,13 +120,15 @@ def send_bad_weather_forecast_to_email(email, city):
     # Look for variables that indicate bad weather
     bad_weather_forecast = check_for_bad_weather(weather_data)
 
-    insert_forecast_data(weather_data)
+    # Save forecast data in DB, to keep historical records
+    insert_forecast_data(weather_data, city[0])
 
     # Send email with the bad weather information
     send_email(email, bad_weather_forecast, city)
 
 
 def send_full_list():
+    print("Sending bad weather forecast to all subscribers")
     subscribers = get_subscriber_list()
 
     cities = get_city_list()
@@ -142,5 +140,21 @@ def send_full_list():
         send_bad_weather_forecast_to_email(email, city)
 
 
+shutdown_flag = False
+
+
+def run_scheduler():
+    while not shutdown_flag:
+        schedule.run_pending()
+        time.sleep(1)
+
+
 if __name__ == "__main__":
-    send_full_list()
+    schedule.every(2).minutes.do(send_full_list)
+
+    scheduler_thread = threading.Thread(target=run_scheduler)
+    scheduler_thread.start()
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    shutdown_flag = True

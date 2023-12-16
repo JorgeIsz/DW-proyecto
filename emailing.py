@@ -17,6 +17,10 @@ variables_text = {
         'name': 'Temperature',
         'bad_desc': 'unideal temperature',
     },
+    'apparent_temperature': {
+        'name': 'Apparent Temperature',
+        'bad_desc': 'unideal apparent temperature',
+    },
     "precipitation_probability": {
         'name': 'Precipitation Change',
         'bad_desc': 'high precipitation change',
